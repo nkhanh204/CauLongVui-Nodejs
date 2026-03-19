@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import { useCourts, useCreateCourt, useUpdateCourt, useDeleteCourt } from '../hooks/useCourts';
+import { Button } from '../components/ui/Button';
+import CourtForm from '../components/CourtForm';
+
+export default function Courts() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCourt, setEditingCourt] = useState(null);
+
+  const { data, isLoading, isError } = useCourts();
+
+  const createMutation = useCreateCourt({
+    onSuccess: () => handleCloseForm(),
+  });
+
+  const updateMutation = useUpdateCourt({
+    onSuccess: () => handleCloseForm(),
+  });
+
+  const deleteMutation = useDeleteCourt();
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingCourt(null);
+  };
+
+  const handleEdit = (court) => {
+    setEditingCourt(court);
+    setIsFormOpen(true);
+  };
+
+  /**
+   * Xử lý submit form — trả về Promise để CourtForm có thể bắt lỗi validation.
+   * @param {object} formData
+   */
+  const handleSubmit = async (formData) => {
+    if (editingCourt) {
+      return updateMutation.mutateAsync({ id: editingCourt.id, data: formData });
+    } else {
+      return createMutation.mutateAsync(formData);
+    }
+  };
+
+  if (isLoading) return <div className="text-xs font-black uppercase text-slate-400 p-8">ĐANG TẢI DỮ LIỆU...</div>;
+  if (isError) return <div className="text-xs font-black uppercase text-red-500 p-8">LỖI TẢI DỮ LIỆU</div>;
+
+  const courts = data?.items || [];
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <header className="flex justify-between items-end">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">Danh sách sân đấu</h1>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">QUẢN LÝ THÔNG TIN & TRẠNG THÁI SÂN</p>
+        </div>
+        <Button onClick={() => setIsFormOpen(true)} aria-label="Thêm sân đấu mới">THÊM SÂN MỚI</Button>
+      </header>
+
+      <section className="bento-card overflow-hidden !p-0" aria-label="Bảng danh sách sân đấu">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 border-b border-slate-100">
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên Sân</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mô tả</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
+              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {courts.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-[10px] font-black text-slate-300 uppercase italic">Chưa có sân đấu nào</td>
+              </tr>
+            ) : courts.map((court) => (
+              <tr key={court.id} className="hover:bg-slate-50/30 transition-colors group">
+                <td className="px-6 py-4">
+                  <article className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        {court.imageUrl ? (
+                            <img src={`http://localhost:5000${court.imageUrl}`} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-slate-300 uppercase italic">NO IMG</div>
+                        )}
+                    </div>
+                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{court.courtName}</p>
+                  </article>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-xs font-bold text-slate-400 line-clamp-1 max-w-xs uppercase">{court.description || 'CHƯA CÓ MÔ TẢ'}</p>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className={clsx(
+                    "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter",
+                    court.isMaintenance ? "bg-red-50 text-red-600" : "bg-teal-50 text-teal-600"
+                  )}>
+                    {court.isMaintenance ? '● BẢO TRÌ' : '● HOẠT ĐỘNG'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <nav className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      type="button"
+                      onClick={() => handleEdit(court)}
+                      aria-label={`Sửa thông tin sân ${court.courtName}`}
+                      className="text-[10px] font-black text-slate-400 hover:text-teal-600 uppercase tracking-widest"
+                    >
+                      SỬA
+                    </button>
+                    <span className="text-slate-200 text-xs">|</span>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if(confirm('XÁC NHẬN XÓA SÂN NÀY?')) deleteMutation.mutate(court.id);
+                      }}
+                      aria-label={`Xóa sân ${court.courtName}`}
+                      className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest"
+                    >
+                      XÓA
+                    </button>
+                  </nav>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {isFormOpen && (
+        <CourtForm 
+          onSubmit={handleSubmit}
+          initialData={editingCourt}
+          onCancel={handleCloseForm}
+        />
+      )}
+    </div>
+  );
+}
+
+// Helper clsx for inline use
+function clsx(...classes) {
+  return classes.filter(Boolean).join(' ');
+}

@@ -1,0 +1,539 @@
+{
+  "info": {
+    "name": "CauLongVui API",
+    "description": "Complete API Collection for CauLongVui Backend — 34 endpoints across 9 modules",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "courtId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "slotId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "voucherId", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "roleId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01. Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyen Van A\",\n  \"phoneNumber\": \"0912345678\",\n  \"email\": \"test@gmail.com\",\n  \"password\": \"123456\",\n  \"roleId\": \"{{roleId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('token', res.data.token);",
+                  "  pm.collectionVariables.set('userId', res.data.user?.id || '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"0912345678\",\n  \"password\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Tran Thi B\",\n  \"phoneNumber\": \"0987654321\",\n  \"email\": \"userb@gmail.com\",\n  \"password\": \"123456\",\n  \"roleId\": \"{{roleId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyen Van A Updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Courts",
+      "item": [
+        {
+          "name": "Get All Courts",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/courts", "host": ["{{baseUrl}}"], "path": ["courts"] }
+          }
+        },
+        {
+          "name": "Get Court By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/courts/{{courtId}}", "host": ["{{baseUrl}}"], "path": ["courts", "{{courtId}}"] }
+          }
+        },
+        {
+          "name": "Create Court (multipart)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('courtId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/courts", "host": ["{{baseUrl}}"], "path": ["courts"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "courtName", "value": "San A1", "type": "text" },
+                { "key": "description", "value": "San cau long so 1", "type": "text" },
+                { "key": "images", "type": "file", "src": "", "description": "Chon file anh" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Court (multipart)",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/courts/{{courtId}}", "host": ["{{baseUrl}}"], "path": ["courts", "{{courtId}}"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "courtName", "value": "San A1 Updated", "type": "text" },
+                { "key": "isMaintenance", "value": "false", "type": "text" },
+                { "key": "images", "type": "file", "src": "", "description": "Thay the anh moi" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Court (Soft)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/courts/{{courtId}}", "host": ["{{baseUrl}}"], "path": ["courts", "{{courtId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Time Slots",
+      "item": [
+        {
+          "name": "Get All Time Slots",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/time-slots", "host": ["{{baseUrl}}"], "path": ["time-slots"] }
+          }
+        },
+        {
+          "name": "Get Time Slot By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/time-slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["time-slots", "{{slotId}}"] }
+          }
+        },
+        {
+          "name": "Create Time Slot (30min)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('slotId', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/time-slots", "host": ["{{baseUrl}}"], "path": ["time-slots"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"08:00\",\n  \"endTime\": \"08:30\",\n  \"price\": 50000,\n  \"isPeakHour\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Time Slot",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/time-slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["time-slots", "{{slotId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 75000,\n  \"isPeakHour\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Time Slot",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/time-slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["time-slots", "{{slotId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Bookings",
+      "item": [
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] }
+          }
+        },
+        {
+          "name": "Get Booking By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings", "{{bookingId}}"] }
+          }
+        },
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('bookingId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"courtId\": \"{{courtId}}\",\n  \"slotId\": \"{{slotId}}\",\n  \"bookingDate\": \"2026-03-20\",\n  \"voucherId\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings", "{{bookingId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingDate\": \"2026-03-21\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}/status", "host": ["{{baseUrl}}"], "path": ["bookings", "{{bookingId}}", "status"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Confirmed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Booking",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings", "{{bookingId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Payments",
+      "item": [
+        {
+          "name": "Get All Payments",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/payments", "host": ["{{baseUrl}}"], "path": ["payments"] }
+          }
+        },
+        {
+          "name": "Get Payment By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/payments/{{paymentId}}", "host": ["{{baseUrl}}"], "path": ["payments", "{{paymentId}}"] }
+          }
+        },
+        {
+          "name": "Create Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('paymentId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/payments", "host": ["{{baseUrl}}"], "path": ["payments"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"userId\": \"{{userId}}\",\n  \"amount\": 50000,\n  \"paymentMethod\": \"Cash\",\n  \"gatewayResponse\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/payments/{{paymentId}}/status", "host": ["{{baseUrl}}"], "path": ["payments", "{{paymentId}}", "status"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Success\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Vouchers",
+      "item": [
+        {
+          "name": "Get All Vouchers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/vouchers", "host": ["{{baseUrl}}"], "path": ["vouchers"] }
+          }
+        },
+        {
+          "name": "Get Voucher By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/vouchers/{{voucherId}}", "host": ["{{baseUrl}}"], "path": ["vouchers", "{{voucherId}}"] }
+          }
+        },
+        {
+          "name": "Create Voucher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('voucherId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/vouchers", "host": ["{{baseUrl}}"], "path": ["vouchers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voucherCode\": \"GIAM20\",\n  \"description\": \"Giam 20% cho khach moi\",\n  \"discountType\": \"Percentage\",\n  \"discountValue\": 20,\n  \"minOrderValue\": 100000,\n  \"maxDiscount\": 50000,\n  \"startDate\": \"2026-03-01T00:00:00.000Z\",\n  \"endDate\": \"2026-04-30T23:59:59.000Z\",\n  \"usageLimit\": 100,\n  \"maxUsagePerUser\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Voucher",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/vouchers/{{voucherId}}", "host": ["{{baseUrl}}"], "path": ["vouchers", "{{voucherId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"discountValue\": 30,\n  \"description\": \"Giam 30% cap nhat\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Voucher",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/vouchers/{{voucherId}}", "host": ["{{baseUrl}}"], "path": ["vouchers", "{{voucherId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Reviews",
+      "item": [
+        {
+          "name": "Get Reviews By Court",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/reviews/court/{{courtId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "court", "{{courtId}}"] }
+          }
+        },
+        {
+          "name": "Create Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('reviewId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/reviews", "host": ["{{baseUrl}}"], "path": ["reviews"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"courtId\": \"{{courtId}}\",\n  \"bookingId\": \"{{bookingId}}\",\n  \"rating\": 5,\n  \"comment\": \"San dep, dich vu tot!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"San ok, can cai thien anh sang\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. Files",
+      "item": [
+        {
+          "name": "Upload Images (max 10)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/files/images", "host": ["{{baseUrl}}"], "path": ["files", "images"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "images", "type": "file", "src": "", "description": "Chon file 1" },
+                { "key": "images", "type": "file", "src": "", "description": "Chon file 2" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/files/avatar", "host": ["{{baseUrl}}"], "path": ["files", "avatar"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "avatar", "type": "file", "src": "", "description": "Chon avatar" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
