@@ -37,7 +37,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  balance: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
 }, { timestamps: true });
+
+// Lọc user active (soft delete filter)
+userSchema.index({ status: 1 });
 
 // Pre-save hook to generate default avatar using ui-avatars.com
 userSchema.pre('save', function (next) {

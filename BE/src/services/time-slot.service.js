@@ -1,4 +1,5 @@
 const TimeSlot = require('../models/time-slot.model');
+const Booking = require('../models/booking.model');
 const { NotFoundError } = require('../exceptions/NotFoundError');
 const { BadRequestError } = require('../exceptions/BadRequestError');
 
@@ -48,13 +49,24 @@ const update = async (id, updateData) => {
 };
 
 /**
- * Delete time slot
+ * Delete time slot (kiểm tra ràng buộc trước khi xóa)
  * @param {string} id 
  * @returns {Promise<void>}
  */
 const deleteSlot = async (id) => {
-  const slot = await TimeSlot.findByIdAndDelete(id);
+  const slot = await TimeSlot.findById(id);
   if (!slot) throw new NotFoundError('Time slot not found');
+
+  // Check active bookings using this slot
+  const activeBookings = await Booking.countDocuments({
+    slotId: id,
+    status: { $in: ['Pending', 'Confirmed'] },
+  });
+  if (activeBookings > 0) {
+    throw new BadRequestError(`Cannot delete time slot: ${activeBookings} active booking(s) use this slot.`);
+  }
+
+  await TimeSlot.findByIdAndDelete(id);
 };
 
 module.exports = {

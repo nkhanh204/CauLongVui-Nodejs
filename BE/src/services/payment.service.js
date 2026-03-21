@@ -1,4 +1,7 @@
 const Payment = require('../models/payment.model');
+const Booking = require('../models/booking.model');
+const PendingExpiry = require('../models/pending-expiry.model');
+const mongoose = require('mongoose');
 const bookingService = require('./booking.service');
 const userService = require('./user.service');
 const vnpayService = require('./external/vnpay.service');
@@ -90,7 +93,8 @@ const createVnpayPayment = async ({ bookingId, userId, req }) => {
 };
 
 /**
- * Handle VNPay return/IPN callback: verify → update Payment + Booking
+ * Handle VNPay return/IPN callback: verify → update Payment + Booking atomically
+ * Uses Mongoose Transaction to ensure data consistency
  * @param {Object} query - Express req.query from VNPay callback
  * @returns {Promise<{ isSuccess: boolean, paymentId: string|null, amount: number|null, message: string }>}
  */
@@ -119,20 +123,32 @@ const handleVnpayCallback = async (query) => {
     return { isSuccess: false, paymentId: payment._id.toString(), amount: result.amount, message: 'VNPay payment failed' };
   }
 
-  // Success: update payment + booking
-  payment.status = 'Success';
-  payment.transactionRef = result.transactionId || null;
-  payment.gatewayResponse = JSON.stringify(query);
-  if (result.amount && result.amount > 0) {
-    payment.amount = result.amount;
-  }
-  await payment.save();
-
-  // Confirm booking
+  // Success: update payment + booking atomically
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    await bookingService.updateStatus(payment.bookingId.toString(), 'Confirmed');
-  } catch {
-    // Booking may already be confirmed
+    payment.status = 'Success';
+    payment.transactionRef = result.transactionId || null;
+    payment.gatewayResponse = JSON.stringify(query);
+    if (result.amount && result.amount > 0) {
+      payment.amount = result.amount;
+    }
+    await payment.save({ session });
+
+    await Booking.findByIdAndUpdate(
+      payment.bookingId,
+      { status: 'Confirmed' },
+      { session }
+    );
+
+    await PendingExpiry.deleteOne({ bookingId: payment.bookingId }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
 
   return { isSuccess: true, paymentId: payment._id.toString(), amount: result.amount, message: 'VNPay payment success' };
@@ -184,7 +200,8 @@ const createMomoPayment = async ({ bookingId, userId, fullName }) => {
 };
 
 /**
- * Handle MoMo callback: parse query → update Payment + Booking
+ * Handle MoMo callback: parse query → update Payment + Booking atomically
+ * Uses Mongoose Transaction to ensure data consistency
  * @param {Object} query - Express req.query from MoMo redirect
  * @returns {Promise<{ isSuccess: boolean, paymentId: string|null, amount: string, message: string }>}
  */
@@ -206,34 +223,49 @@ const handleMomoCallback = async (query) => {
   }
 
   const resultCode = query.resultCode ? Number(query.resultCode) : -1;
-  const isSuccess = resultCode === 0;
+  const isMomoSuccess = resultCode === 0;
 
-  if (!isSuccess) {
+  if (!isMomoSuccess) {
     payment.status = 'Failed';
     payment.gatewayResponse = JSON.stringify(query);
     await payment.save();
     return { isSuccess: false, paymentId: payment._id.toString(), amount: result.amount, message: 'MoMo payment failed' };
   }
 
-  payment.status = 'Success';
-  payment.transactionRef = result.momoOrderId;
-  payment.gatewayResponse = JSON.stringify(query);
-  if (result.amount) {
-    payment.amount = Number(result.amount);
-  }
-  await payment.save();
-
+  // Success: update payment + booking atomically
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    await bookingService.updateStatus(payment.bookingId.toString(), 'Confirmed');
-  } catch {
-    // Booking may already be confirmed
+    payment.status = 'Success';
+    payment.transactionRef = result.momoOrderId;
+    payment.gatewayResponse = JSON.stringify(query);
+    if (result.amount) {
+      payment.amount = Number(result.amount);
+    }
+    await payment.save({ session });
+
+    await Booking.findByIdAndUpdate(
+      payment.bookingId,
+      { status: 'Confirmed' },
+      { session }
+    );
+
+    await PendingExpiry.deleteOne({ bookingId: payment.bookingId }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
 
   return { isSuccess: true, paymentId: payment._id.toString(), amount: result.amount, message: 'MoMo payment success' };
 };
 
 /**
- * Handle MoMo IPN (notify): verify signature → confirm → update DB
+ * Handle MoMo IPN (notify): verify signature → confirm → update DB atomically
+ * Uses Mongoose Transaction to ensure data consistency
  * @param {Object} body - MoMo IPN request body
  * @returns {Promise<{ isSuccess: boolean, message: string }>}
  */
@@ -270,18 +302,32 @@ const handleMomoIpn = async (body) => {
     return { isSuccess: true, message: 'Already settled' };
   }
 
-  payment.status = 'Success';
-  payment.transactionRef = body.orderId || null;
-  payment.gatewayResponse = JSON.stringify(body);
-  if (confirmResult.amount && confirmResult.amount > 0) {
-    payment.amount = confirmResult.amount;
-  }
-  await payment.save();
-
+  // Success: update payment + booking atomically
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    await bookingService.updateStatus(payment.bookingId.toString(), 'Confirmed');
-  } catch {
-    // Booking may already be confirmed
+    payment.status = 'Success';
+    payment.transactionRef = body.orderId || null;
+    payment.gatewayResponse = JSON.stringify(body);
+    if (confirmResult.amount && confirmResult.amount > 0) {
+      payment.amount = confirmResult.amount;
+    }
+    await payment.save({ session });
+
+    await Booking.findByIdAndUpdate(
+      payment.bookingId,
+      { status: 'Confirmed' },
+      { session }
+    );
+
+    await PendingExpiry.deleteOne({ bookingId: payment.bookingId }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
 
   return { isSuccess: true, message: 'MoMo IPN processed' };

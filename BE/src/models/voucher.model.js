@@ -60,6 +60,9 @@ const voucherSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Lọc voucher đang hoạt động + còn hạn
+voucherSchema.index({ isActive: 1, endDate: -1 });
+
 const Voucher = mongoose.model('Voucher', voucherSchema);
 
 module.exports = Voucher;

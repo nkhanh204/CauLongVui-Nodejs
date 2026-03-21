@@ -28,6 +28,11 @@ const reviewSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Đánh giá theo sân (mới nhất trước)
+reviewSchema.index({ courtId: 1, createdAt: -1 });
+// 1 user chỉ review 1 booking (optional unique)
+reviewSchema.index({ userId: 1, bookingId: 1 });
+
 const Review = mongoose.model('Review', reviewSchema);
 
 module.exports = Review;

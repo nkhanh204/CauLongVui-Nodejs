@@ -41,6 +41,13 @@ const bookingSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Double-booking check: courtId + slotId + bookingDate + status
+bookingSchema.index({ courtId: 1, slotId: 1, bookingDate: 1, status: 1 });
+// User's bookings (mới nhất trước)
+bookingSchema.index({ userId: 1, createdAt: -1 });
+// Lọc theo trạng thái + ngày (admin dashboard)
+bookingSchema.index({ status: 1, bookingDate: -1 });
+
 const Booking = mongoose.model('Booking', bookingSchema);
 
 module.exports = Booking;

@@ -11,6 +11,11 @@ const timeSlotRoutes = require('./time-slot.route');
 const reviewRoutes = require('./review.route');
 const fileRoutes = require('./file.route');
 const roleRoutes = require('./role.route');
+const productRoutes = require('./product.route');
+const foodOrderRoutes = require('./food-order.route');
+const bookingExchangeRoutes = require('./booking-exchange.route');
+const statisticsRoutes = require('./statistics.route');
+
 const { validateApiKey } = require('../middlewares/auth.middleware');
 
 // Apply minimal Public Key security to ALL routes
@@ -26,5 +31,10 @@ router.use('/time-slots', timeSlotRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/files', fileRoutes);
 router.use('/roles', roleRoutes);
+router.use('/products', productRoutes);
+router.use('/food-orders', foodOrderRoutes);
+router.use('/booking-exchanges', bookingExchangeRoutes);
+router.use('/statistics', statisticsRoutes);
+
 
 module.exports = router;

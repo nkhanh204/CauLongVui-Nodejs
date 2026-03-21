@@ -47,13 +47,16 @@ const update = async (id, updateData) => {
 };
 
 /**
- * Delete voucher
+ * Soft delete voucher (đánh dấu ngưng sử dụng)
  * @param {string} id 
  * @returns {Promise<void>}
  */
 const remove = async (id) => {
-  const voucher = await Voucher.findByIdAndDelete(id);
+  const voucher = await Voucher.findById(id);
   if (!voucher) throw new BadRequestError('Voucher not found');
+
+  voucher.isActive = false;
+  await voucher.save();
 };
 
 module.exports = {

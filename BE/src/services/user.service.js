@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const Booking = require('../models/booking.model');
 const bcrypt = require('bcrypt');
 const { BadRequestError } = require('../exceptions/BadRequestError');
 const roleService = require('./role.service');
@@ -28,8 +29,8 @@ const create = async (userData) => {
  */
 const findAll = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
-  const items = await User.find().skip(skip).limit(limit);
-  const total = await User.countDocuments();
+  const items = await User.find({ status: { $ne: 'deleted' } }).skip(skip).limit(limit);
+  const total = await User.countDocuments({ status: { $ne: 'deleted' } });
   return { items, pagination: { page, limit, total } };
 };
 
@@ -39,7 +40,7 @@ const findAll = async ({ page = 1, limit = 10 }) => {
  * @returns {Promise<Object>}
  */
 const findById = async (id) => {
-  const user = await User.findById(id);
+  const user = await User.findOne({ _id: id, status: { $ne: 'deleted' } });
   if (!user) throw new BadRequestError('User not found');
   return user;
 };
@@ -61,19 +62,35 @@ const update = async (id, updateData) => {
     updateData.passwordHash = await bcrypt.hash(updateData.password, salt);
   }
   
-  const user = await User.findByIdAndUpdate(id, updateData, { new: true });
+  const user = await User.findOneAndUpdate(
+    { _id: id, status: { $ne: 'deleted' } },
+    updateData,
+    { new: true }
+  );
   if (!user) throw new BadRequestError('User not found');
   return user;
 };
 
 /**
- * Delete user
+ * Soft delete user (kiểm tra ràng buộc trước khi xóa)
  * @param {string} id 
  * @returns {Promise<void>}
  */
 const remove = async (id) => {
-  const user = await User.findByIdAndDelete(id);
+  const user = await User.findOne({ _id: id, status: { $ne: 'deleted' } });
   if (!user) throw new BadRequestError('User not found');
+
+  // Check for active bookings
+  const activeBookings = await Booking.countDocuments({
+    userId: id,
+    status: { $in: ['Pending', 'Confirmed'] },
+  });
+  if (activeBookings > 0) {
+    throw new BadRequestError(`Cannot delete user: ${activeBookings} active booking(s) exist. Cancel them first.`);
+  }
+
+  user.status = 'deleted';
+  await user.save();
 };
 
 module.exports = {
@@ -83,3 +100,4 @@ module.exports = {
   update,
   remove,
 };
+

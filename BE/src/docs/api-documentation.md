@@ -91,7 +91,7 @@
 - **Type**: `multipart/form-data`
 - **Fields**:
     - `courtName`: (String) e.g., "Sân A1"
-    - `description`: (String) e.g., "Sân thảm mới"
+    - `description`: (String) e.g., " "
     - `images`: (File) Select multiple files
 - **Success Response (201)**:
 ```json

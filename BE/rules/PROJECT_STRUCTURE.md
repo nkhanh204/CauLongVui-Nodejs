@@ -2,9 +2,10 @@
 
 ```text
 BE/
-├── public/                         # file public (dev only)
-│    └── uploads/
-
+├── uploads/                # 🔥 ngoài src
+│    ├── images/
+│    ├── avatars/
+│    └── temp/
 ├── src/
 │
 │    ├── config/                    # cấu hình hệ thống
@@ -60,12 +61,15 @@ BE/
 │    │    ├── validate.middleware.js   #  NEW
 │    │    └── upload.middleware.js
 │
+│
 │    ├── utils/                    #  helper
 │    │    ├── formatMoney.js
 │    │    ├── date.js
 │    │    ├── generateCode.js
 │    │    ├── logger.js
 │    │    └── response.js          #  NEW (format API response)
+│
+│    └── uploads/
 │
 │    ├── constants/                #  hằng số
 │    │    ├── roles.js

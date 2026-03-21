@@ -1,10 +1,13 @@
 const Booking = require('../models/booking.model');
-const socketService = require('./socket.service');
+const Payment = require('../models/payment.model');
+const PendingExpiry = require('../models/pending-expiry.model');
 const timeSlotService = require('./time-slot.service');
 const voucherService = require('./voucher.service');
 const courtService = require('./court.service');
 const userService = require('./user.service');
 const { BadRequestError } = require('../exceptions/BadRequestError');
+
+const BOOKING_EXPIRY_MINUTES = 10;
 
 /**
  * Create a new booking
@@ -62,12 +65,13 @@ const create = async (bookingData) => {
   bookingData.discountAmount = discountAmount;
 
   const booking = await Booking.create(bookingData);
-  
-  // Notify other users in the same court room
-  socketService.emitToCourt(bookingData.courtId, 'slot:booked', {
-    slotId: bookingData.slotId,
-    bookingDate: bookingData.bookingDate,
-  });
+
+  // Tạo PendingExpiry → MongoDB TTL sẽ tự xóa sau 10 phút
+  // Khi xóa → Change Stream bắt event → auto-cancel booking
+  const expireAt = new Date(Date.now() + BOOKING_EXPIRY_MINUTES * 60 * 1000);
+  await PendingExpiry.create({ bookingId: booking._id, expireAt });
+
+  // Socket emit sẽ được xử lý bởi Change Stream watcher (không cần emit thủ công)
 
   return booking;
 };
@@ -105,20 +109,12 @@ const updateStatus = async (id, status) => {
   const booking = await Booking.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
   if (!booking) throw new BadRequestError('Booking not found');
 
-  // Notify realtime
+  // Nếu Confirmed → xóa PendingExpiry (không cần auto-cancel nữa)
   if (status === 'Confirmed') {
-    socketService.emitToCourt(booking.courtId.toString(), 'slot:confirmed', {
-      slotId: booking.slotId,
-      bookingDate: booking.bookingDate,
-    });
-  } else if (status === 'Cancelled') {
-    socketService.emitToCourt(booking.courtId.toString(), 'slot:released', {
-      slotId: booking.slotId,
-      bookingDate: booking.bookingDate,
-      reason: 'manual_cancellation'
-    });
+    await PendingExpiry.deleteOne({ bookingId: id });
   }
 
+  // Socket emit sẽ được xử lý bởi Change Stream watcher
   return booking;
 };
 
@@ -135,13 +131,31 @@ const update = async (id, updateData) => {
 };
 
 /**
- * Delete booking
+ * Soft delete booking (kiểm tra ràng buộc trước khi xóa)
  * @param {string} id 
  * @returns {Promise<void>}
  */
 const remove = async (id) => {
-  const booking = await Booking.findByIdAndDelete(id);
+  const booking = await Booking.findById(id);
   if (!booking) throw new BadRequestError('Booking not found');
+
+  // Không cho xóa nếu đã thanh toán thành công
+  const hasPaidPayment = await Payment.countDocuments({
+    bookingId: id,
+    status: 'Success',
+  });
+  if (hasPaidPayment > 0) {
+    throw new BadRequestError('Cannot delete booking: payment has been completed. Please cancel instead.');
+  }
+
+  // Soft delete → chuyển trạng thái sang Cancelled
+  booking.status = 'Cancelled';
+  await booking.save();
+
+  // Xóa PendingExpiry nếu còn
+  await PendingExpiry.deleteOne({ bookingId: id });
+
+  // Socket emit sẽ được xử lý bởi Change Stream watcher
 };
 
 module.exports = {
@@ -152,3 +166,4 @@ module.exports = {
   update,
   remove,
 };
+

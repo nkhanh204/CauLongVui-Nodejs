@@ -12,6 +12,7 @@ const userDto = (user) => {
     email: user.email,
     roleId: user.roleId,
     avatar: user.avatar || '/uploads/images/defaul.png',
+    balance: user.balance || 0,
     createdAt: user.createdAt,
   };
 };
