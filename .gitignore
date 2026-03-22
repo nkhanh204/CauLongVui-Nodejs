@@ -3,3 +3,4 @@ node_modules
 .agents/
 .agent/
 .gemini/
+.BE/docs/
