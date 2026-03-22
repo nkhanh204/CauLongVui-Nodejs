@@ -12,6 +12,6 @@ router.delete('/:id', validateApiKey('secret'), userController.deleteUser);
 
 // User tự xem/sửa profile: cần JWT
 router.get('/:id', verifyToken, userController.getUserById);
-router.put('/:id', verifyToken, validate(updateUserSchema), userController.updateUser);
+router.patch('/:id', verifyToken, validate(updateUserSchema), userController.updateUser);
 
 module.exports = router;

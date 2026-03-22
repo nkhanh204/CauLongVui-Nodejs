@@ -41,8 +41,16 @@ const bookingSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Double-booking check: courtId + slotId + bookingDate + status
-bookingSchema.index({ courtId: 1, slotId: 1, bookingDate: 1, status: 1 });
+// Double-booking check: courtId + slotId + bookingDate (Unique for non-cancelled)
+bookingSchema.index(
+  { courtId: 1, slotId: 1, bookingDate: 1 },
+  { 
+    unique: true, 
+    // MongoDB partial indexes don't support $ne well. Use $in for allowed statuses.
+    partialFilterExpression: { status: { $in: ['Pending', 'Confirmed'] } },
+    name: 'unique_court_slot_date'
+  }
+);
 // User's bookings (mới nhất trước)
 bookingSchema.index({ userId: 1, createdAt: -1 });
 // Lọc theo trạng thái + ngày (admin dashboard)

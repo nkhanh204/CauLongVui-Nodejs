@@ -137,15 +137,20 @@ const handleVnpayCallback = async (query) => {
   }
 
   // Success: update payment + booking atomically
+  // Destructive Testing: Check amount mismatch
+  if (result.amount && result.amount !== payment.amount) {
+    payment.status = 'Failed';
+    payment.gatewayResponse = JSON.stringify({ ...query, error: 'Amount mismatch' });
+    await payment.save();
+    return { isSuccess: false, paymentId: payment._id.toString(), amount: result.amount, message: 'Amount mismatch' };
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     payment.status = 'Success';
     payment.transactionRef = result.transactionId || null;
     payment.gatewayResponse = JSON.stringify(query);
-    if (result.amount && result.amount > 0) {
-      payment.amount = result.amount;
-    }
     await payment.save({ session });
 
     await Booking.findByIdAndUpdate(
@@ -316,15 +321,20 @@ const handleMomoIpn = async (body) => {
   }
 
   // Success: update payment + booking atomically
+  // Destructive Testing: Check amount mismatch
+  if (confirmResult.amount && confirmResult.amount !== payment.amount) {
+    payment.status = 'Failed';
+    payment.gatewayResponse = JSON.stringify({ ...body, error: 'Amount mismatch' });
+    await payment.save();
+    return { isSuccess: false, message: 'Amount mismatch' };
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     payment.status = 'Success';
     payment.transactionRef = body.orderId || null;
     payment.gatewayResponse = JSON.stringify(body);
-    if (confirmResult.amount && confirmResult.amount > 0) {
-      payment.amount = confirmResult.amount;
-    }
     await payment.save({ session });
 
     await Booking.findByIdAndUpdate(

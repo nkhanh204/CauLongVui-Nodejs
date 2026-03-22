@@ -48,13 +48,12 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ status: 1 });
 
 // Pre-save hook to generate default avatar using ui-avatars.com
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function () {
   if (this.isNew && !this.avatar) {
     const encodedName = encodeURIComponent(this.fullName || 'User');
     // Generates a nice initials avatar with a random background
     this.avatar = `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&size=256`;
   }
-  next();
 });
 
 const User = mongoose.model('User', userSchema);

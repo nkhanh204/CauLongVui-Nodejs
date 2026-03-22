@@ -21,7 +21,9 @@ BE/
 │    │    ├── court.controller.js
 │    │    ├── booking.controller.js
 │    │    ├── payment.controller.js
-│    │    └── voucher.controller.js
+│    │    ├── voucher.controller.js
+│    │    ├── product.controller.js
+│    │    └── order.controller.js
 │
 │    ├── services/                 #  business logic
 │    │    ├── auth.service.js
@@ -30,6 +32,8 @@ BE/
 │    │    ├── booking.service.js
 │    │    ├── payment.service.js
 │    │    ├── voucher.service.js
+│    │    ├── product.service.js
+│    │    ├── order.service.js
 │    │
 │    │    └── external/            #  tích hợp bên thứ 3
 │    │         ├── momo.service.js
@@ -41,18 +45,24 @@ BE/
 │    │    ├── court.model.js
 │    │    ├── booking.model.js
 │    │    ├── payment.model.js
-│    │    └── voucher.model.js
+│    │    ├── voucher.model.js
+│    │    ├── product.model.js
+│    │    └── order.model.js
 │
 │    ├── validations/              #  validate input
 │    │    ├── auth.validation.js
 │    │    ├── user.validation.js
 │    │    ├── booking.validation.js
-│    │    └── voucher.validation.js
+│    │    ├── voucher.validation.js
+│    │    ├── product.validation.js
+│    │    └── order.validation.js
 │
 │    ├── dtos/                     #  format response
 │    │    ├── user.dto.js
 │    │    ├── booking.dto.js
-│    │    └── voucher.dto.js
+│    │    ├── voucher.dto.js
+│    │    ├── product.dto.js
+│    │    └── order.dto.js
 │
 │    ├── middlewares/              #  middleware
 │    │    ├── auth.middleware.js
@@ -90,6 +100,8 @@ BE/
 │    │    ├── court.route.js
 │    │    ├── payment.route.js
 │    │    ├── voucher.route.js
+│    │    ├── product.route.js
+│    │    ├── order.route.js
 │    │    └── index.js
 │
 │    ├── docs/                     #  API docs (optional nhưng nên có)

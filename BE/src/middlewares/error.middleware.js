@@ -10,9 +10,15 @@ const errorMiddleware = (err, req, res, next) => {
     message = `Invalid ID format: ${err.value}`;
   }
 
+  // Handle Mongoose ValidationError
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = Object.values(err.errors).map((val) => val.message).join(', ');
+  }
+
   if (!(err instanceof ApiError) && !statusCode) {
     statusCode = 500;
-    message = 'Internal Server Error';
+    message = process.env.NODE_ENV === 'test' ? err.message : 'Internal Server Error';
   }
 
   // Log error

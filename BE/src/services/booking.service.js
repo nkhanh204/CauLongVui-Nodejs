@@ -25,6 +25,13 @@ const create = async (bookingData) => {
   const startOfDay = new Date(Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate(), 0, 0, 0, 0));
   const endOfDay = new Date(Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate(), 23, 59, 59, 999));
 
+  // Past Date Validation (Boundary Analysis)
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  if (startOfDay < today) {
+    throw new BadRequestError('Cannot book in the past (Boundary violation)');
+  }
+
   const existingBooking = await Booking.findOne({
     courtId: bookingData.courtId,
     slotId: bookingData.slotId,
