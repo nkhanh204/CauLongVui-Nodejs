@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBookings } from '../hooks/useBookings';
 import { useCourts } from '../hooks/useCourts';
 import { useTimeSlots } from '../hooks/useTimeSlots';
+import { createMomoPayment } from '../services/payment.service';
 
 const LIST_PARAMS = { page: 1, limit: 200 };
 
@@ -32,6 +33,7 @@ const canOrder = (status) => status === 'Confirmed' || status === 'Pending';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [paymentLoading, setPaymentLoading] = useState({});
 
   const user = useMemo(() => {
     const savedUser = localStorage.getItem('user');
@@ -48,6 +50,25 @@ export default function Profile() {
       navigate('/login');
     }
   }, [user, navigate]);
+
+  const handleMomoPayment = async (bookingId) => {
+    try {
+      setPaymentLoading(prev => ({ ...prev, [bookingId]: true }));
+      const result = await createMomoPayment({ 
+        bookingId, 
+        fullName: user?.fullName || 'Khach hang' 
+      });
+      if (result.payUrl) {
+        window.location.href = result.payUrl;
+      } else {
+        alert('Khong the tao link thanh toan MoMo');
+      }
+    } catch (error) {
+      alert(error.message || 'Loi khi tao thanh toan MoMo');
+    } finally {
+      setPaymentLoading(prev => ({ ...prev, [bookingId]: false }));
+    }
+  };
 
   const bookingsQuery = useBookings(LIST_PARAMS, { enabled: !!user });
   const courtsQuery = useCourts(LIST_PARAMS);
@@ -155,7 +176,7 @@ export default function Profile() {
                         {booking.status}
                       </span>
 
-                      <div className="mt-3">
+                      <div className="mt-3 flex flex-wrap gap-2 justify-end">
                         <button
                           type="button"
                           onClick={() => navigate(`/bookings/${bookingId}/order`)}
@@ -164,6 +185,17 @@ export default function Profile() {
                         >
                           Chon Order
                         </button>
+                        
+                        {booking.status === 'Confirmed' && (
+                          <button
+                            type="button"
+                            onClick={() => handleMomoPayment(bookingId)}
+                            disabled={paymentLoading[bookingId]}
+                            className="px-4 py-2 rounded-xl bg-pink-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-pink-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {paymentLoading[bookingId] ? 'Dang xu ly...' : 'Thanh toan MoMo'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
